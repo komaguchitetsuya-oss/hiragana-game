@@ -1,5 +1,5 @@
 const CACHE_NAME = 'hiragana-game-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icon.svg'];
+const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', event => {
   event.waitUntil(

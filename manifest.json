@@ -2,7 +2,7 @@
   "name": "ひらがな よめるかな？",
   "short_name": "ひらがな",
   "description": "3さいから たのしめる ひらがな よみかた ゲーム",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFF5E6",
