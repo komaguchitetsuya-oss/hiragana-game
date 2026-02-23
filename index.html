@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ひらがな">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#FFF5E6">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>ひらがな よめるかな？</title>
+<style>
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-start: #FFF5E6;
+  --bg-end: #FFE0F0;
+  --text-main: #4A3728;
+  --star-color: #FFD700;
+  --star-outline: #E6A800;
+  --mic-color: #FF4757;
+  --mic-hover: #FF6B6B;
+  --correct-color: #2ED573;
+  --correct-bg: #E8FFF0;
+  --retry-color: #FFA502;
+  --retry-bg: #FFF8E8;
+  --btn-shadow: rgba(0,0,0,0.15);
+  --level-colors: #FF6B6B, #FECA57, #48DBFB, #FF9FF3;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic Pro", "Noto Sans JP", "Yu Gothic", sans-serif;
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+  color: var(--text-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 500px;
+  height: 100vh;
+  height: 100dvh;
+  padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ===== SPLASH SCREEN ===== */
+#splash-screen .title {
+  font-size: clamp(28px, 8vw, 48px);
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #FF6B6B, #FECA57, #48DBFB, #FF9FF3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+#splash-screen .subtitle {
+  font-size: clamp(16px, 4vw, 24px);
+  color: #888;
+  margin-bottom: 50px;
+}
+
+.play-btn {
+  width: clamp(160px, 40vw, 220px);
+  height: clamp(160px, 40vw, 220px);
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(145deg, #FF9FF3, #F368E0);
+  color: white;
+  font-size: clamp(28px, 7vw, 40px);
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(243, 104, 224, 0.4);
+  animation: playPulse 2s ease-in-out infinite;
+  transition: transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.play-btn:active {
+  transform: scale(0.95);
+  animation: none;
+}
+
+.play-btn .play-icon {
+  font-size: clamp(36px, 9vw, 52px);
+}
+
+.continue-btn {
+  margin-top: 30px;
+  padding: 15px 30px;
+  border: 2px solid #DDD;
+  border-radius: 25px;
+  background: white;
+  color: #888;
+  font-size: clamp(14px, 3.5vw, 18px);
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.1s;
+  display: none;
+}
+
+.continue-btn:active {
+  transform: scale(0.95);
+}
+
+.continue-btn.visible {
+  display: block;
+}
+
+/* ===== GAME SCREEN ===== */
+#game-screen {
+  justify-content: flex-start;
+  padding-top: 15px;
+}
+
+.top-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+  margin-bottom: 8px;
+}
+
+.stars-count {
+  font-size: clamp(18px, 5vw, 26px);
+  font-weight: 700;
+  color: var(--star-color);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.level-badge {
+  font-size: clamp(14px, 3.5vw, 18px);
+  font-weight: 700;
+  padding: 5px 15px;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 2px 8px var(--btn-shadow);
+}
+
+.top-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--btn-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+}
+
+.icon-btn:active {
+  transform: scale(0.9);
+}
+
+.progress-container {
+  width: 100%;
+  height: 12px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #FECA57, #FF6B6B);
+  transition: width 0.5s ease;
+}
+
+.word-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.word-display {
+  font-size: clamp(80px, 25vw, 150px);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: var(--text-main);
+  animation: wordEntrance 0.6s ease-out;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.hint-btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 25px;
+  background: linear-gradient(145deg, #48DBFB, #0ABDE3);
+  color: white;
+  font-size: clamp(16px, 4vw, 22px);
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(10, 189, 227, 0.3);
+  transition: transform 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hint-btn:active {
+  transform: scale(0.95);
+}
+
+.mic-area {
+  padding-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.mic-btn {
+  width: clamp(120px, 35vw, 160px);
+  height: clamp(120px, 35vw, 160px);
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(145deg, var(--mic-hover), var(--mic-color));
+  color: white;
+  font-size: clamp(40px, 12vw, 60px);
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+  animation: micPulse 2s ease-in-out infinite;
+  transition: transform 0.1s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mic-btn:active {
+  transform: scale(0.95);
+  animation: none;
+}
+
+.mic-btn.listening {
+  background: linear-gradient(145deg, #FF4757, #C0392B);
+  animation: none;
+  box-shadow: 0 0 0 0 rgba(255,71,87,0.7);
+  animation: listeningPulse 1s ease-in-out infinite;
+}
+
+.mic-btn:disabled {
+  opacity: 0.4;
+  animation: none;
+  cursor: default;
+}
+
+.mic-label {
+  font-size: clamp(14px, 3.5vw, 18px);
+  font-weight: 700;
+  color: #999;
+}
+
+/* Listening wave indicator */
+.listening-indicator {
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  height: 40px;
+}
+
+.listening-indicator.active {
+  display: flex;
+}
+
+.listening-bar {
+  width: 6px;
+  background: var(--mic-color);
+  border-radius: 3px;
+  animation: listeningWave 0.8s ease-in-out infinite;
+}
+
+.listening-bar:nth-child(1) { animation-delay: 0s; height: 15px; }
+.listening-bar:nth-child(2) { animation-delay: 0.1s; height: 25px; }
+.listening-bar:nth-child(3) { animation-delay: 0.2s; height: 35px; }
+.listening-bar:nth-child(4) { animation-delay: 0.1s; height: 25px; }
+.listening-bar:nth-child(5) { animation-delay: 0s; height: 15px; }
+
+/* ===== FEEDBACK OVERLAYS ===== */
+.feedback-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.feedback-overlay.active {
+  display: flex;
+  pointer-events: auto;
+}
+
+#correct-overlay {
+  background: rgba(46, 213, 115, 0.15);
+}
+
+#retry-overlay {
+  background: rgba(255, 165, 2, 0.1);
+}
+
+.feedback-text {
+  font-size: clamp(40px, 12vw, 72px);
+  font-weight: 900;
+  animation: bounceIn 0.5s ease-out;
+}
+
+#correct-overlay .feedback-text {
+  color: var(--correct-color);
+}
+
+#retry-overlay .feedback-text {
+  color: var(--retry-color);
+  font-size: clamp(28px, 8vw, 48px);
+}
+
+.feedback-sub {
+  font-size: clamp(18px, 5vw, 28px);
+  font-weight: 700;
+  margin-top: 10px;
+  animation: bounceIn 0.5s ease-out 0.15s both;
+}
+
+#retry-overlay .feedback-sub {
+  color: var(--retry-color);
+}
+
+.next-btn {
+  margin-top: 30px;
+  padding: 15px 40px;
+  border: none;
+  border-radius: 30px;
+  background: white;
+  color: var(--text-main);
+  font-size: clamp(18px, 5vw, 24px);
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 15px var(--btn-shadow);
+  animation: bounceIn 0.5s ease-out 0.3s both;
+  transition: transform 0.1s;
+}
+
+.next-btn:active {
+  transform: scale(0.95);
+}
+
+/* Star particles */
+.star-particle {
+  position: fixed;
+  font-size: 30px;
+  pointer-events: none;
+  z-index: 101;
+  animation: starFloat 1.2s ease-out forwards;
+}
+
+/* ===== LEVEL COMPLETE SCREEN ===== */
+#level-complete-screen {
+  z-index: 200;
+}
+
+.level-complete-title {
+  font-size: clamp(24px, 7vw, 40px);
+  font-weight: 900;
+  margin-bottom: 5px;
+  animation: bounceIn 0.6s ease-out;
+}
+
+.level-complete-name {
+  font-size: clamp(48px, 14vw, 80px);
+  font-weight: 900;
+  background: linear-gradient(135deg, #FECA57, #FF6B6B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: bounceIn 0.6s ease-out 0.2s both;
+}
+
+.level-stars {
+  font-size: clamp(30px, 8vw, 50px);
+  margin: 20px 0;
+  animation: bounceIn 0.6s ease-out 0.4s both;
+}
+
+.level-next-btn {
+  padding: 18px 50px;
+  border: none;
+  border-radius: 30px;
+  background: linear-gradient(145deg, #FECA57, #FF6B6B);
+  color: white;
+  font-size: clamp(20px, 6vw, 30px);
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+  animation: bounceIn 0.6s ease-out 0.6s both;
+  transition: transform 0.1s;
+}
+
+.level-next-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== ALL CLEAR SCREEN ===== */
+#all-clear-screen {
+  z-index: 200;
+}
+
+.all-clear-title {
+  font-size: clamp(32px, 9vw, 56px);
+  font-weight: 900;
+  background: linear-gradient(135deg, #FF6B6B, #FECA57, #48DBFB, #FF9FF3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: bounceIn 0.6s ease-out;
+  text-align: center;
+}
+
+.all-clear-sub {
+  font-size: clamp(18px, 5vw, 28px);
+  font-weight: 700;
+  margin: 15px 0 5px;
+  animation: bounceIn 0.6s ease-out 0.2s both;
+}
+
+.all-clear-stars {
+  font-size: clamp(24px, 7vw, 40px);
+  font-weight: 900;
+  color: var(--star-color);
+  animation: bounceIn 0.6s ease-out 0.4s both;
+}
+
+.restart-btn {
+  margin-top: 30px;
+  padding: 18px 50px;
+  border: none;
+  border-radius: 30px;
+  background: linear-gradient(145deg, #FF9FF3, #F368E0);
+  color: white;
+  font-size: clamp(18px, 5vw, 26px);
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(243, 104, 224, 0.4);
+  animation: bounceIn 0.6s ease-out 0.6s both;
+  transition: transform 0.1s;
+}
+
+.restart-btn:active {
+  transform: scale(0.95);
+}
+
+/* ===== FALLBACK MODE ===== */
+.fallback-buttons {
+  display: none;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.fallback-buttons.active {
+  display: flex;
+}
+
+.fallback-btn {
+  width: clamp(100px, 28vw, 130px);
+  height: clamp(100px, 28vw, 130px);
+  border-radius: 25px;
+  border: none;
+  font-size: clamp(16px, 4vw, 22px);
+  font-weight: 900;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 20px var(--btn-shadow);
+  transition: transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.fallback-btn:active {
+  transform: scale(0.95);
+}
+
+.fallback-correct {
+  background: linear-gradient(145deg, #2ED573, #26B860);
+  color: white;
+}
+
+.fallback-retry {
+  background: linear-gradient(145deg, #FECA57, #E8B430);
+  color: white;
+}
+
+.fallback-icon {
+  font-size: clamp(30px, 8vw, 44px);
+}
+
+/* ===== CONFETTI ===== */
+.confetti-piece {
+  position: fixed;
+  top: -20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 199;
+  animation: confettiFall var(--fall-duration) linear forwards;
+  animation-delay: var(--fall-delay);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes playPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(243, 104, 224, 0.4); }
+  50% { transform: scale(1.05); box-shadow: 0 12px 35px rgba(243, 104, 224, 0.6); }
+}
+
+@keyframes micPulse {
+  0% { box-shadow: 0 0 0 0 rgba(255,71,87,0.6); }
+  70% { box-shadow: 0 0 0 25px rgba(255,71,87,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,71,87,0); }
+}
+
+@keyframes listeningPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,71,87,0.5); }
+  50% { box-shadow: 0 0 0 15px rgba(255,71,87,0); }
+}
+
+@keyframes wordEntrance {
+  0% { transform: scale(0.3) translateY(-30px); opacity: 0; }
+  60% { transform: scale(1.08) translateY(5px); opacity: 1; }
+  80% { transform: scale(0.97) translateY(-3px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes starFloat {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(-180px) rotate(720deg) scale(0.3); opacity: 0; }
+}
+
+@keyframes listeningWave {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(calc(100vh + 20px)) rotate(var(--fall-rotation)); opacity: 0.5; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splash-screen" class="screen active">
+  <div class="title">ひらがな<br>よめるかな？</div>
+  <div class="subtitle">おとの ちからで チャレンジ！</div>
+  <button class="play-btn" id="play-btn">
+    <span class="play-icon">▶</span>
+    あそぶ
+  </button>
+  <button class="continue-btn" id="continue-btn">つづきから あそぶ</button>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen" class="screen">
+  <div class="top-bar">
+    <div class="stars-count" id="stars-count">★ 0</div>
+    <div class="level-badge" id="level-badge">レベル 1</div>
+    <div class="top-icons">
+      <button class="icon-btn" id="sound-toggle" title="おと">♪</button>
+      <button class="icon-btn" id="home-btn" title="ホーム">🏠</button>
+    </div>
+  </div>
+
+  <div class="progress-container">
+    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+  </div>
+
+  <div class="word-area">
+    <div class="word-display" id="word-display">あ</div>
+    <button class="hint-btn" id="hint-btn">
+      🔊 きいてみる
+    </button>
+  </div>
+
+  <div class="mic-area">
+    <div class="listening-indicator" id="listening-indicator">
+      <div class="listening-bar"></div>
+      <div class="listening-bar"></div>
+      <div class="listening-bar"></div>
+      <div class="listening-bar"></div>
+      <div class="listening-bar"></div>
+    </div>
+    <button class="mic-btn" id="mic-btn">🎤</button>
+    <div class="mic-label" id="mic-label">おはなし してね！</div>
+
+    <!-- Fallback buttons for browsers without speech recognition -->
+    <div class="fallback-buttons" id="fallback-buttons">
+      <button class="fallback-btn fallback-correct" id="fallback-correct-btn">
+        <span class="fallback-icon">⭕</span>
+        できた！
+      </button>
+      <button class="fallback-btn fallback-retry" id="fallback-retry-btn">
+        <span class="fallback-icon">🔄</span>
+        もういちど
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CORRECT FEEDBACK OVERLAY ===== -->
+<div id="correct-overlay" class="feedback-overlay">
+  <div class="feedback-text" id="correct-text">すごい！</div>
+  <div class="feedback-sub" id="correct-sub">★ +1</div>
+  <button class="next-btn" id="next-btn">つぎへ ▶</button>
+</div>
+
+<!-- ===== RETRY FEEDBACK OVERLAY ===== -->
+<div id="retry-overlay" class="feedback-overlay">
+  <div class="feedback-text" id="retry-text">もういちど</div>
+  <div class="feedback-sub" id="retry-sub">やってみよう！</div>
+</div>
+
+<!-- ===== LEVEL COMPLETE SCREEN ===== -->
+<div id="level-complete-screen" class="screen">
+  <div class="level-complete-title">クリア！</div>
+  <div class="level-complete-name" id="level-complete-name">ひよこ</div>
+  <div class="level-stars" id="level-stars">★★★★★</div>
+  <button class="level-next-btn" id="level-next-btn">つぎの レベルへ ▶</button>
+</div>
+
+<!-- ===== ALL CLEAR SCREEN ===== -->
+<div id="all-clear-screen" class="screen">
+  <div class="all-clear-title">ぜんぶ クリア！<br>すごいね！</div>
+  <div class="all-clear-sub">あつめた ほし</div>
+  <div class="all-clear-stars" id="all-clear-stars">★ 0</div>
+  <button class="restart-btn" id="restart-btn">はじめから あそぶ</button>
+</div>
+
+<script>
+// ===== WORD BANK =====
+const WORD_BANK = {
+  1: {
+    name: 'ひよこ',
+    emoji: '🐣',
+    wordsPerRound: 5,
+    words: [
+      { word: 'あ', reading: 'あ' },
+      { word: 'い', reading: 'い' },
+      { word: 'う', reading: 'う' },
+      { word: 'え', reading: 'え' },
+      { word: 'お', reading: 'お' },
+      { word: 'め', reading: 'め' },
+      { word: 'て', reading: 'て' },
+      { word: 'は', reading: 'は' },
+      { word: 'き', reading: 'き' },
+      { word: 'か', reading: 'か' },
+    ]
+  },
+  2: {
+    name: 'うさぎ',
+    emoji: '🐰',
+    wordsPerRound: 7,
+    words: [
+      { word: 'いぬ', reading: 'いぬ' },
+      { word: 'ねこ', reading: 'ねこ' },
+      { word: 'うま', reading: 'うま' },
+      { word: 'あめ', reading: 'あめ' },
+      { word: 'はな', reading: 'はな' },
+      { word: 'もも', reading: 'もも' },
+      { word: 'くも', reading: 'くも' },
+      { word: 'かめ', reading: 'かめ' },
+      { word: 'うみ', reading: 'うみ' },
+      { word: 'ほし', reading: 'ほし' },
+      { word: 'かぜ', reading: 'かぜ' },
+      { word: 'そら', reading: 'そら' },
+    ]
+  },
+  3: {
+    name: 'いるか',
+    emoji: '🐬',
+    wordsPerRound: 8,
+    words: [
+      { word: 'いちご', reading: 'いちご' },
+      { word: 'うさぎ', reading: 'うさぎ' },
+      { word: 'あひる', reading: 'あひる' },
+      { word: 'みかん', reading: 'みかん' },
+      { word: 'くるま', reading: 'くるま' },
+      { word: 'ばなな', reading: 'ばなな' },
+      { word: 'たまご', reading: 'たまご' },
+      { word: 'とまと', reading: 'とまと' },
+      { word: 'さくら', reading: 'さくら' },
+      { word: 'かもめ', reading: 'かもめ' },
+    ]
+  },
+  4: {
+    name: 'ライオン',
+    emoji: '🦁',
+    wordsPerRound: 5,
+    words: [
+      { word: 'すいか', reading: 'すいか' },
+      { word: 'ぶどう', reading: 'ぶどう' },
+      { word: 'きりん', reading: 'きりん' },
+      { word: 'ひこうき', reading: 'ひこうき' },
+      { word: 'しんかんせん', reading: 'しんかんせん' },
+      { word: 'きょうりゅう', reading: 'きょうりゅう' },
+    ]
+  }
+};
+
+const LEVEL_COUNT = Object.keys(WORD_BANK).length;
+
+// ===== PRAISE & RETRY MESSAGES =====
+const PRAISE_MESSAGES = [
+  'すごい！', 'やったね！', 'じょうず！', 'えらい！',
+  'ばっちり！', 'かっこいい！', 'すばらしい！', 'いいね！',
+  'できたね！', 'さいこう！',
+];
+
+const RETRY_MESSAGES = [
+  { main: 'もういちど', sub: 'やってみよう！' },
+  { main: 'おしい！', sub: 'もういっかい！' },
+  { main: 'がんばれ！', sub: 'もういちど！' },
+];
+
+// ===== CHILD PRONUNCIATION SUBSTITUTION MAP =====
+const CHILD_SUBSTITUTIONS = {
+  'さ': ['しゃ', 'た', 'ちゃ'],
+  'し': ['ち', 'ひ'],
+  'す': ['ちゅ', 'つ', 'しゅ'],
+  'せ': ['しぇ', 'て', 'ちぇ'],
+  'そ': ['しょ', 'と', 'ちょ'],
+  'ら': ['だ', 'な'],
+  'り': ['でぃ', 'に', 'い', 'ぢ'],
+  'る': ['どぅ', 'ぬ', 'う', 'ど'],
+  'れ': ['で', 'ね'],
+  'ろ': ['ど', 'の'],
+  'か': ['た'],
+  'き': ['ち'],
+  'く': ['つ'],
+  'け': ['て'],
+  'こ': ['と'],
+  'ざ': ['だ'],
+  'じ': ['ぢ', 'でぃ'],
+  'ず': ['づ', 'どぅ'],
+  'ぜ': ['で', 'じぇ'],
+  'ぞ': ['ど'],
+  'つ': ['ちゅ'],
+};
+
+// ===== GAME STATE =====
+let gameState = {
+  currentLevel: 1,
+  currentWordIndex: 0,
+  wordsInRound: [],
+  totalStars: 0,
+  starsThisLevel: 0,
+  attemptsOnCurrentWord: 0,
+  autoPassMode: false,
+  soundEnabled: true,
+  completedLevels: [],
+};
+
+// ===== DOM ELEMENTS =====
+const $ = id => document.getElementById(id);
+
+const splashScreen = $('splash-screen');
+const gameScreen = $('game-screen');
+const levelCompleteScreen = $('level-complete-screen');
+const allClearScreen = $('all-clear-screen');
+const correctOverlay = $('correct-overlay');
+const retryOverlay = $('retry-overlay');
+
+const playBtn = $('play-btn');
+const continueBtn = $('continue-btn');
+const micBtn = $('mic-btn');
+const hintBtn = $('hint-btn');
+const nextBtn = $('next-btn');
+const levelNextBtn = $('level-next-btn');
+const restartBtn = $('restart-btn');
+const soundToggle = $('sound-toggle');
+const homeBtn = $('home-btn');
+const fallbackCorrectBtn = $('fallback-correct-btn');
+const fallbackRetryBtn = $('fallback-retry-btn');
+
+const wordDisplay = $('word-display');
+const starsCount = $('stars-count');
+const levelBadge = $('level-badge');
+const progressFill = $('progress-fill');
+const micLabel = $('mic-label');
+const listeningIndicator = $('listening-indicator');
+const fallbackButtons = $('fallback-buttons');
+
+// ===== SOUND EFFECTS (Web Audio API) =====
+let audioCtx = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playTone(frequency, duration, type = 'sine', volume = 0.25) {
+  if (!audioCtx || !gameState.soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playCorrectSound() {
+  playTone(523.25, 0.15);
+  setTimeout(() => playTone(659.25, 0.15), 100);
+  setTimeout(() => playTone(783.99, 0.3), 200);
+}
+
+function playRetrySound() {
+  playTone(440, 0.15, 'sine', 0.15);
+  setTimeout(() => playTone(349.23, 0.2, 'sine', 0.15), 150);
+}
+
+function playLevelUpSound() {
+  const notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77, 1046.5];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.15), i * 80);
+  });
+}
+
+function playStarSound() {
+  playTone(1200, 0.08);
+  setTimeout(() => playTone(1600, 0.08), 60);
+  setTimeout(() => playTone(2000, 0.1), 120);
+}
+
+function playTapSound() {
+  playTone(800, 0.05);
+}
+
+// ===== SPEECH SYNTHESIS =====
+let cachedVoices = [];
+
+function loadVoices() {
+  cachedVoices = speechSynthesis.getVoices();
+}
+
+if (typeof speechSynthesis !== 'undefined') {
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+}
+
+function speakWord(text) {
+  if (!gameState.soundEnabled) return;
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ja-JP';
+  utterance.rate = 0.8;
+  utterance.pitch = 1.2;
+  const jaVoice = cachedVoices.find(v => v.lang.startsWith('ja'));
+  if (jaVoice) utterance.voice = jaVoice;
+  speechSynthesis.speak(utterance);
+}
+
+// ===== SPEECH RECOGNITION =====
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let hasSpeechRecognition = !!SpeechRecognition;
+let recognitionActive = false;
+let recognitionGotResult = false;
+
+// iOS Safari requires creating a fresh SpeechRecognition instance each time
+function createRecognition() {
+  if (!SpeechRecognition) return null;
+  const rec = new SpeechRecognition();
+  rec.lang = 'ja-JP';
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.maxAlternatives = 10;
+  rec.onresult = handleRecognitionResult;
+  rec.onerror = handleRecognitionError;
+  rec.onend = handleRecognitionEnd;
+  return rec;
+}
+
+function initSpeechRecognition() {
+  if (!SpeechRecognition) {
+    hasSpeechRecognition = false;
+    return;
+  }
+  // Test that we can actually construct one (some browsers claim support but fail)
+  try {
+    const test = new SpeechRecognition();
+    hasSpeechRecognition = true;
+  } catch (e) {
+    hasSpeechRecognition = false;
+  }
+}
+
+function startRecognition() {
+  if (!hasSpeechRecognition || recognitionActive) return;
+  // Create fresh instance each time (fixes iOS Safari)
+  recognition = createRecognition();
+  if (!recognition) return;
+  try {
+    recognitionActive = true;
+    recognitionGotResult = false;
+    recognition.start();
+    micBtn.classList.add('listening');
+    listeningIndicator.classList.add('active');
+    micLabel.textContent = 'きいてるよ…';
+    // Safety timeout: if nothing happens in 8s, reset
+    gameState._recTimeout = setTimeout(() => {
+      if (recognitionActive) {
+        stopRecognition();
+        micLabel.textContent = 'もういちど おはなし してね！';
+      }
+    }, 8000);
+  } catch (e) {
+    recognitionActive = false;
+    micBtn.classList.remove('listening');
+    listeningIndicator.classList.remove('active');
+    // If start() itself fails, switch to fallback mode
+    hasSpeechRecognition = false;
+    showFallbackMode();
+  }
+}
+
+function stopRecognition() {
+  clearTimeout(gameState._recTimeout);
+  if (recognition) {
+    try { recognition.stop(); } catch (e) { /* ignore */ }
+    try { recognition.abort(); } catch (e) { /* ignore */ }
+  }
+  recognitionActive = false;
+  micBtn.classList.remove('listening');
+  listeningIndicator.classList.remove('active');
+  micLabel.textContent = 'おはなし してね！';
+}
+
+function handleRecognitionResult(event) {
+  recognitionGotResult = true;
+  stopRecognition();
+  const results = event.results[0];
+  const alternatives = [];
+  for (let i = 0; i < results.length; i++) {
+    alternatives.push(results[i].transcript.trim());
+  }
+
+  const target = getCurrentWord().reading;
+  const matchResult = checkMatch(target, alternatives);
+
+  if (matchResult.match || gameState.autoPassMode) {
+    gameState.autoPassMode = false;
+    showCorrectFeedback();
+  } else {
+    gameState.attemptsOnCurrentWord++;
+    if (gameState.attemptsOnCurrentWord >= 3) {
+      showAutoPassHint();
+    } else {
+      showRetryFeedback();
+    }
+  }
+}
+
+function handleRecognitionError(event) {
+  stopRecognition();
+  if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+    // Microphone permission denied — switch to fallback
+    micLabel.textContent = 'マイクが つかえません';
+    hasSpeechRecognition = false;
+    showFallbackMode();
+  } else if (event.error === 'no-speech') {
+    micLabel.textContent = 'もういちど おはなし してね！';
+  } else {
+    micLabel.textContent = 'おはなし してね！';
+  }
+}
+
+function handleRecognitionEnd() {
+  // On iOS Safari, onend fires even on success — only reset UI if no result came
+  if (recognitionActive && !recognitionGotResult) {
+    stopRecognition();
+    micLabel.textContent = 'もういちど おはなし してね！';
+  }
+}
+
+function showFallbackMode() {
+  micBtn.style.display = 'none';
+  listeningIndicator.style.display = 'none';
+  fallbackButtons.classList.add('active');
+  micLabel.textContent = '';
+}
+
+// ===== FUZZY MATCHING =====
+function normalizeToHiragana(text) {
+  return text.replace(/[\u30A1-\u30F6]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  ).replace(/[\u30FC]/g, 'ー');
+}
+
+function generateChildVariants(targetWord) {
+  let variants = [''];
+  for (const char of targetWord) {
+    const options = [char, ...(CHILD_SUBSTITUTIONS[char] || [])];
+    const newVariants = [];
+    for (const variant of variants) {
+      for (const option of options) {
+        newVariants.push(variant + option);
+      }
+    }
+    variants = newVariants;
+    // Safety: cap at 200 variants
+    if (variants.length > 200) {
+      variants = variants.slice(0, 200);
+    }
+  }
+  return variants;
+}
+
+function levenshteinDistance(a, b) {
+  const m = a.length, n = b.length;
+  const d = Array.from({ length: m + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      d[i][j] = a[i - 1] === b[j - 1]
+        ? d[i - 1][j - 1]
+        : Math.min(d[i - 1][j - 1] + 1, d[i][j - 1] + 1, d[i - 1][j] + 1);
+    }
+  }
+  return d[m][n];
+}
+
+function checkMatch(target, alternatives) {
+  const maxDist = target.length <= 1 ? 0 : target.length <= 2 ? 1 : 2;
+  const variants = generateChildVariants(target);
+
+  for (const alt of alternatives) {
+    const normalized = normalizeToHiragana(alt);
+
+    // Tier 1: Exact match
+    if (normalized === target) return { match: true, tier: 1 };
+
+    // Tier 2: Child variant match
+    if (variants.includes(normalized)) return { match: true, tier: 2 };
+
+    // Tier 3: Levenshtein on target
+    if (levenshteinDistance(normalized, target) <= maxDist) return { match: true, tier: 3 };
+
+    // Tier 3b: Levenshtein on child variants
+    for (const v of variants) {
+      if (levenshteinDistance(normalized, v) <= Math.max(maxDist - 1, 0)) {
+        return { match: true, tier: 3 };
+      }
+    }
+  }
+  return { match: false, tier: 0 };
+}
+
+// ===== GAME LOGIC =====
+function getCurrentWord() {
+  return gameState.wordsInRound[gameState.currentWordIndex];
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startLevel(level) {
+  const bank = WORD_BANK[level];
+  if (!bank) {
+    showAllClear();
+    return;
+  }
+  gameState.currentLevel = level;
+  gameState.currentWordIndex = 0;
+  gameState.starsThisLevel = 0;
+  gameState.attemptsOnCurrentWord = 0;
+  gameState.autoPassMode = false;
+
+  const shuffled = shuffleArray(bank.words);
+  gameState.wordsInRound = shuffled.slice(0, bank.wordsPerRound);
+
+  updateUI();
+  showScreen(gameScreen);
+  showCurrentWord();
+}
+
+function showCurrentWord() {
+  const word = getCurrentWord();
+  wordDisplay.textContent = word.word;
+  wordDisplay.style.animation = 'none';
+  void wordDisplay.offsetWidth; // trigger reflow
+  wordDisplay.style.animation = 'wordEntrance 0.6s ease-out';
+  gameState.attemptsOnCurrentWord = 0;
+  gameState.autoPassMode = false;
+  micLabel.textContent = 'おはなし してね！';
+  micBtn.disabled = false;
+  updateProgress();
+}
+
+function advanceToNextWord() {
+  hideOverlays();
+  gameState.currentWordIndex++;
+
+  const bank = WORD_BANK[gameState.currentLevel];
+  if (gameState.currentWordIndex >= gameState.wordsInRound.length) {
+    // Level complete
+    if (!gameState.completedLevels.includes(gameState.currentLevel)) {
+      gameState.completedLevels.push(gameState.currentLevel);
+    }
+    gameState.totalStars += 5; // level bonus
+    saveProgress();
+    showLevelComplete();
+  } else {
+    showCurrentWord();
+  }
+}
+
+function showAutoPassHint() {
+  // Read the word aloud, then enable auto-pass mode
+  const word = getCurrentWord();
+  speakWord(word.reading);
+  gameState.autoPassMode = true;
+  micLabel.textContent = 'いっしょに いってみよう！';
+  micBtn.disabled = false;
+
+  // Briefly show hint text
+  retryOverlay.classList.add('active');
+  $('retry-text').textContent = 'きいてみてね';
+  $('retry-sub').textContent = 'いっしょに いってみよう！';
+  setTimeout(() => {
+    retryOverlay.classList.remove('active');
+  }, 2000);
+}
+
+// ===== FEEDBACK =====
+function showCorrectFeedback() {
+  playCorrectSound();
+  spawnStarParticles();
+
+  const isFirstTry = gameState.attemptsOnCurrentWord === 0 && !gameState.autoPassMode;
+  const starsEarned = isFirstTry ? 2 : 1;
+  gameState.totalStars += starsEarned;
+  gameState.starsThisLevel += starsEarned;
+  updateUI();
+  saveProgress();
+
+  const praise = PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
+  $('correct-text').textContent = praise;
+  $('correct-sub').textContent = '★ +' + starsEarned;
+
+  correctOverlay.classList.add('active');
+
+  playStarSound();
+}
+
+function showRetryFeedback() {
+  playRetrySound();
+
+  const msg = RETRY_MESSAGES[Math.floor(Math.random() * RETRY_MESSAGES.length)];
+  $('retry-text').textContent = msg.main;
+  $('retry-sub').textContent = msg.sub;
+
+  retryOverlay.classList.add('active');
+  setTimeout(() => {
+    retryOverlay.classList.remove('active');
+  }, 1500);
+}
+
+function showLevelComplete() {
+  playLevelUpSound();
+  spawnConfetti();
+
+  const bank = WORD_BANK[gameState.currentLevel];
+  $('level-complete-name').textContent = bank.emoji + ' ' + bank.name;
+  $('level-stars').textContent = '★'.repeat(Math.min(gameState.starsThisLevel, 10)) + (gameState.starsThisLevel > 10 ? '…' : '');
+
+  if (gameState.currentLevel >= LEVEL_COUNT) {
+    levelNextBtn.textContent = 'けっか をみる ▶';
+  } else {
+    levelNextBtn.textContent = 'つぎの レベルへ ▶';
+  }
+
+  showScreen(levelCompleteScreen);
+}
+
+function showAllClear() {
+  spawnConfetti();
+  $('all-clear-stars').textContent = '★ ' + gameState.totalStars;
+  showScreen(allClearScreen);
+}
+
+function hideOverlays() {
+  correctOverlay.classList.remove('active');
+  retryOverlay.classList.remove('active');
+}
+
+// ===== STAR PARTICLES =====
+function spawnStarParticles() {
+  for (let i = 0; i < 8; i++) {
+    const star = document.createElement('div');
+    star.className = 'star-particle';
+    star.textContent = '★';
+    star.style.left = (Math.random() * 80 + 10) + '%';
+    star.style.top = (Math.random() * 30 + 40) + '%';
+    star.style.color = Math.random() > 0.5 ? '#FFD700' : '#FF6B6B';
+    star.style.fontSize = (Math.random() * 20 + 20) + 'px';
+    document.body.appendChild(star);
+    star.addEventListener('animationend', () => star.remove());
+  }
+}
+
+// ===== CONFETTI =====
+function spawnConfetti() {
+  const colors = ['#FF6B6B', '#FECA57', '#48DBFB', '#FF9FF3', '#2ED573', '#A29BFE'];
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = (Math.random() * 100) + '%';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.setProperty('--fall-duration', (Math.random() * 2 + 2) + 's');
+    piece.style.setProperty('--fall-delay', (Math.random() * 1) + 's');
+    piece.style.setProperty('--fall-rotation', (Math.random() * 1080 - 540) + 'deg');
+    piece.style.width = (Math.random() * 8 + 6) + 'px';
+    piece.style.height = (Math.random() * 8 + 6) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(piece);
+    piece.addEventListener('animationend', () => piece.remove());
+  }
+}
+
+// ===== UI UPDATES =====
+function updateUI() {
+  starsCount.textContent = '★ ' + gameState.totalStars;
+  const bank = WORD_BANK[gameState.currentLevel];
+  if (bank) {
+    levelBadge.textContent = bank.emoji + ' レベル ' + gameState.currentLevel;
+  }
+}
+
+function updateProgress() {
+  const total = gameState.wordsInRound.length;
+  const current = gameState.currentWordIndex;
+  const pct = total > 0 ? (current / total * 100) : 0;
+  progressFill.style.width = pct + '%';
+}
+
+function showScreen(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  screen.classList.add('active');
+}
+
+// ===== LOCAL STORAGE =====
+const STORAGE_KEY = 'hiragana_game_v1';
+
+function saveProgress() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      currentLevel: gameState.currentLevel,
+      totalStars: gameState.totalStars,
+      completedLevels: gameState.completedLevels,
+      savedAt: Date.now(),
+    }));
+  } catch (e) { /* silently fail */ }
+}
+
+function loadProgress() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return null;
+    const parsed = JSON.parse(data);
+    if (parsed.version !== 1) return null;
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+function resetProgress() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) { /* silently fail */ }
+  gameState.currentLevel = 1;
+  gameState.totalStars = 0;
+  gameState.completedLevels = [];
+}
+
+// ===== INIT =====
+function init() {
+  initSpeechRecognition();
+
+  // Check saved progress
+  const saved = loadProgress();
+  if (saved && saved.completedLevels && saved.completedLevels.length > 0) {
+    continueBtn.classList.add('visible');
+  }
+
+  // Show fallback buttons if no speech recognition
+  if (!hasSpeechRecognition) {
+    showFallbackMode();
+  }
+
+  // ===== EVENT LISTENERS =====
+  playBtn.addEventListener('click', () => {
+    initAudio();
+    playTapSound();
+    resetProgress();
+    startLevel(1);
+  });
+
+  continueBtn.addEventListener('click', () => {
+    initAudio();
+    playTapSound();
+    const saved = loadProgress();
+    if (saved) {
+      gameState.totalStars = saved.totalStars || 0;
+      gameState.completedLevels = saved.completedLevels || [];
+      const nextLevel = Math.min(
+        (saved.completedLevels.length > 0 ? Math.max(...saved.completedLevels) + 1 : 1),
+        LEVEL_COUNT
+      );
+      startLevel(nextLevel);
+    } else {
+      startLevel(1);
+    }
+  });
+
+  micBtn.addEventListener('click', () => {
+    if (micBtn.disabled) return;
+    playTapSound();
+    if (recognitionActive) {
+      stopRecognition();
+    } else {
+      startRecognition();
+    }
+  });
+
+  hintBtn.addEventListener('click', () => {
+    playTapSound();
+    const word = getCurrentWord();
+    if (word) speakWord(word.reading);
+  });
+
+  nextBtn.addEventListener('click', () => {
+    playTapSound();
+    advanceToNextWord();
+  });
+
+  levelNextBtn.addEventListener('click', () => {
+    initAudio();
+    playTapSound();
+    if (gameState.currentLevel >= LEVEL_COUNT) {
+      showAllClear();
+    } else {
+      startLevel(gameState.currentLevel + 1);
+    }
+  });
+
+  restartBtn.addEventListener('click', () => {
+    playTapSound();
+    resetProgress();
+    showScreen(splashScreen);
+    continueBtn.classList.remove('visible');
+  });
+
+  soundToggle.addEventListener('click', () => {
+    gameState.soundEnabled = !gameState.soundEnabled;
+    soundToggle.textContent = gameState.soundEnabled ? '♪' : '🔇';
+    if (gameState.soundEnabled) playTapSound();
+  });
+
+  homeBtn.addEventListener('click', () => {
+    playTapSound();
+    stopRecognition();
+    hideOverlays();
+    showScreen(splashScreen);
+    const saved = loadProgress();
+    if (saved && saved.completedLevels && saved.completedLevels.length > 0) {
+      continueBtn.classList.add('visible');
+    }
+  });
+
+  // Fallback mode buttons
+  fallbackCorrectBtn.addEventListener('click', () => {
+    playTapSound();
+    showCorrectFeedback();
+  });
+
+  fallbackRetryBtn.addEventListener('click', () => {
+    playTapSound();
+    gameState.attemptsOnCurrentWord++;
+    if (gameState.attemptsOnCurrentWord >= 3) {
+      showAutoPassHint();
+    } else {
+      showRetryFeedback();
+    }
+  });
+
+  // Save on page hide
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveProgress();
+  });
+  window.addEventListener('beforeunload', saveProgress);
+}
+
+// ===== PWA: Generate icons + register service worker =====
+function generateIcon(size) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, '#FF9FF3');
+  grad.addColorStop(1, '#F368E0');
+  // Rounded rect
+  const r = size * 0.2;
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(size - r, 0);
+  ctx.quadraticCurveTo(size, 0, size, r);
+  ctx.lineTo(size, size - r);
+  ctx.quadraticCurveTo(size, size, size - r, size);
+  ctx.lineTo(r, size);
+  ctx.quadraticCurveTo(0, size, 0, size - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+  // Text
+  ctx.fillStyle = 'white';
+  ctx.font = `900 ${size * 0.55}px "Hiragino Sans", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('あ', size * 0.48, size * 0.55);
+  // Star
+  ctx.fillStyle = '#FFD700';
+  ctx.font = `${size * 0.2}px sans-serif`;
+  ctx.fillText('★', size * 0.78, size * 0.22);
+  return canvas.toDataURL('image/png');
+}
+
+// Set apple-touch-icon dynamically
+try {
+  const iconLink = document.querySelector('link[rel="apple-touch-icon"]');
+  if (iconLink) iconLink.href = generateIcon(192);
+} catch (e) { /* ignore */ }
+
+// Register service worker for PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// Start the app
+init();
+</script>
+</body>
+</html>
