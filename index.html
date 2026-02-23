@@ -234,13 +234,15 @@ body {
 }
 
 .word-display {
-  font-size: clamp(80px, 25vw, 150px);
+  font-size: clamp(48px, 18vw, 120px);
   font-weight: 900;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   color: var(--text-main);
   animation: wordEntrance 0.6s ease-out;
   text-align: center;
   line-height: 1.2;
+  word-break: keep-all;
+  max-width: 95%;
 }
 
 .hint-btn {
@@ -737,52 +739,50 @@ const WORD_BANK = {
     emoji: '🐣',
     wordsPerRound: 5,
     words: [
-      { word: 'いぬ', reading: 'いぬ' },
-      { word: 'ねこ', reading: 'ねこ' },
-      { word: 'もも', reading: 'もも' },
-      { word: 'あめ', reading: 'あめ' },
-      { word: 'うま', reading: 'うま' },
-      { word: 'はな', reading: 'はな' },
-      { word: 'うみ', reading: 'うみ' },
-      { word: 'そら', reading: 'そら' },
-      { word: 'ほし', reading: 'ほし' },
-      { word: 'くも', reading: 'くも' },
+      { word: 'いちご', reading: 'いちご' },
+      { word: 'うさぎ', reading: 'うさぎ' },
+      { word: 'みかん', reading: 'みかん' },
+      { word: 'くるま', reading: 'くるま' },
+      { word: 'ばなな', reading: 'ばなな' },
+      { word: 'たまご', reading: 'たまご' },
+      { word: 'りんご', reading: 'りんご' },
+      { word: 'さくら', reading: 'さくら' },
+      { word: 'とまと', reading: 'とまと' },
+      { word: 'あひる', reading: 'あひる' },
     ]
   },
   2: {
     name: 'うさぎ',
     emoji: '🐰',
-    wordsPerRound: 7,
+    wordsPerRound: 6,
     words: [
-      { word: 'かめ', reading: 'かめ' },
-      { word: 'かぜ', reading: 'かぜ' },
-      { word: 'ぶた', reading: 'ぶた' },
-      { word: 'つき', reading: 'つき' },
-      { word: 'やま', reading: 'やま' },
-      { word: 'とり', reading: 'とり' },
-      { word: 'かわ', reading: 'かわ' },
-      { word: 'むし', reading: 'むし' },
-      { word: 'まめ', reading: 'まめ' },
-      { word: 'おに', reading: 'おに' },
-      { word: 'ふね', reading: 'ふね' },
-      { word: 'くつ', reading: 'くつ' },
+      { word: 'おにぎり', reading: 'おにぎり' },
+      { word: 'ひこうき', reading: 'ひこうき' },
+      { word: 'たんぽぽ', reading: 'たんぽぽ' },
+      { word: 'しまうま', reading: 'しまうま' },
+      { word: 'ひまわり', reading: 'ひまわり' },
+      { word: 'でんしゃ', reading: 'でんしゃ' },
+      { word: 'きんぎょ', reading: 'きんぎょ' },
+      { word: 'あさがお', reading: 'あさがお' },
+      { word: 'おさかな', reading: 'おさかな' },
+      { word: 'すいぞく', reading: 'すいぞく' },
     ]
   },
   3: {
     name: 'いるか',
     emoji: '🐬',
-    wordsPerRound: 8,
+    wordsPerRound: 6,
     words: [
-      { word: 'いちご', reading: 'いちご' },
-      { word: 'うさぎ', reading: 'うさぎ' },
-      { word: 'あひる', reading: 'あひる' },
-      { word: 'みかん', reading: 'みかん' },
-      { word: 'くるま', reading: 'くるま' },
-      { word: 'ばなな', reading: 'ばなな' },
-      { word: 'たまご', reading: 'たまご' },
-      { word: 'とまと', reading: 'とまと' },
-      { word: 'さくら', reading: 'さくら' },
-      { word: 'かもめ', reading: 'かもめ' },
+      { word: 'かたつむり', reading: 'かたつむり' },
+      { word: 'おかあさん', reading: 'おかあさん' },
+      { word: 'おとうさん', reading: 'おとうさん' },
+      { word: 'おともだち', reading: 'おともだち' },
+      { word: 'こいのぼり', reading: 'こいのぼり' },
+      { word: 'かぶとむし', reading: 'かぶとむし' },
+      { word: 'おべんとう', reading: 'おべんとう' },
+      { word: 'だんごむし', reading: 'だんごむし' },
+      { word: 'はんばーぐ', reading: 'はんばーぐ' },
+      { word: 'かきごおり', reading: 'かきごおり' },
     ]
   },
   4: {
@@ -790,12 +790,14 @@ const WORD_BANK = {
     emoji: '🦁',
     wordsPerRound: 5,
     words: [
-      { word: 'すいか', reading: 'すいか' },
-      { word: 'ぶどう', reading: 'ぶどう' },
-      { word: 'きりん', reading: 'きりん' },
-      { word: 'ひこうき', reading: 'ひこうき' },
-      { word: 'しんかんせん', reading: 'しんかんせん' },
-      { word: 'きょうりゅう', reading: 'きょうりゅう' },
+      { word: 'おはよう', reading: 'おはよう' },
+      { word: 'ありがとう', reading: 'ありがとう' },
+      { word: 'いただきます', reading: 'いただきます' },
+      { word: 'ごちそうさま', reading: 'ごちそうさま' },
+      { word: 'おやすみなさい', reading: 'おやすみなさい' },
+      { word: 'いってきます', reading: 'いってきます' },
+      { word: 'ただいま', reading: 'ただいま' },
+      { word: 'おかえり', reading: 'おかえり' },
     ]
   }
 };
@@ -1103,6 +1105,7 @@ let recognition = null;
 let hasSpeechRecognition = !!SpeechRecognition;
 let recognitionActive = false;
 let recognitionGotResult = false;
+let recognitionFailCount = 0;
 
 // iOS Safari requires creating a fresh SpeechRecognition instance each time
 function createRecognition() {
@@ -1123,7 +1126,6 @@ function initSpeechRecognition() {
     hasSpeechRecognition = false;
     return;
   }
-  // Test that we can actually construct one (some browsers claim support but fail)
   try {
     const test = new SpeechRecognition();
     hasSpeechRecognition = true;
@@ -1133,8 +1135,8 @@ function initSpeechRecognition() {
 }
 
 function startRecognition() {
-  if (!hasSpeechRecognition || recognitionActive) return;
-  // Create fresh instance each time (fixes iOS Safari)
+  if (!SpeechRecognition || recognitionActive) return;
+  // Always try — don't give up permanently
   recognition = createRecognition();
   if (!recognition) return;
   try {
@@ -1149,7 +1151,6 @@ function startRecognition() {
       if (recognitionActive) {
         stopRecognition();
         micLabel.textContent = 'もういちど おはなし してね！';
-        // Auto-restart after a brief pause
         setTimeout(() => startRecognition(), 1500);
       }
     }, 8000);
@@ -1157,9 +1158,12 @@ function startRecognition() {
     recognitionActive = false;
     micBtn.classList.remove('listening');
     listeningIndicator.classList.remove('active');
-    // If start() itself fails, switch to fallback mode
-    hasSpeechRecognition = false;
-    showFallbackMode();
+    recognitionFailCount++;
+    // Retry after a pause instead of giving up
+    micLabel.textContent = 'もういちど おはなし してね！';
+    if (recognitionFailCount < 5) {
+      setTimeout(() => startRecognition(), 2000);
+    }
   }
 }
 
@@ -1177,6 +1181,7 @@ function stopRecognition() {
 
 function handleRecognitionResult(event) {
   recognitionGotResult = true;
+  recognitionFailCount = 0; // Reset fail counter on success
   stopRecognition();
   const results = event.results[0];
   const alternatives = [];
@@ -1203,14 +1208,17 @@ function handleRecognitionResult(event) {
 function handleRecognitionError(event) {
   stopRecognition();
   if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-    // Microphone permission denied — switch to fallback
-    micLabel.textContent = 'マイクが つかえません';
-    hasSpeechRecognition = false;
-    showFallbackMode();
+    // Mic permission denied — show message but don't permanently disable
+    micLabel.textContent = 'マイクボタンを おしてね';
+    recognitionFailCount++;
   } else if (event.error === 'no-speech') {
     micLabel.textContent = 'もういちど おはなし してね！';
+    // Auto-restart after no-speech
+    setTimeout(() => startRecognition(), 1500);
   } else {
     micLabel.textContent = 'おはなし してね！';
+    // Auto-restart on other errors
+    setTimeout(() => startRecognition(), 2000);
   }
 }
 
@@ -1219,16 +1227,8 @@ function handleRecognitionEnd() {
   if (recognitionActive && !recognitionGotResult) {
     stopRecognition();
     micLabel.textContent = 'もういちど おはなし してね！';
-    // Auto-restart
     setTimeout(() => startRecognition(), 1500);
   }
-}
-
-function showFallbackMode() {
-  micBtn.style.display = 'none';
-  listeningIndicator.style.display = 'none';
-  fallbackButtons.classList.add('active');
-  micLabel.textContent = '';
 }
 
 // ===== FUZZY MATCHING =====
@@ -1364,6 +1364,12 @@ function startLevel(level) {
 function showCurrentWord() {
   const word = getCurrentWord();
   wordDisplay.textContent = word.word;
+  // Dynamic font size for longer words/sentences
+  const len = word.word.length;
+  if (len <= 3) wordDisplay.style.fontSize = '';
+  else if (len <= 5) wordDisplay.style.fontSize = 'clamp(40px, 14vw, 100px)';
+  else if (len <= 7) wordDisplay.style.fontSize = 'clamp(32px, 11vw, 80px)';
+  else wordDisplay.style.fontSize = 'clamp(26px, 9vw, 64px)';
   wordDisplay.style.animation = 'none';
   void wordDisplay.offsetWidth; // trigger reflow
   wordDisplay.style.animation = 'wordEntrance 0.6s ease-out';
@@ -1372,13 +1378,11 @@ function showCurrentWord() {
   micBtn.disabled = false;
   updateProgress();
   // Auto-start listening after word entrance animation
-  if (hasSpeechRecognition) {
-    micLabel.textContent = '';
+  micLabel.textContent = '';
+  if (SpeechRecognition) {
     setTimeout(() => {
       startRecognition();
     }, 800);
-  } else {
-    micLabel.textContent = '';
   }
 }
 
@@ -1415,7 +1419,7 @@ function showAutoPassHint() {
   setTimeout(() => {
     retryOverlay.classList.remove('active');
     // Auto-restart listening in auto-pass mode
-    if (hasSpeechRecognition) {
+    if (SpeechRecognition) {
       setTimeout(() => startRecognition(), 500);
     }
   }, 2500);
@@ -1465,7 +1469,7 @@ function showRetryFeedback() {
   setTimeout(() => {
     retryOverlay.classList.remove('active');
     // Auto-restart listening after retry
-    if (hasSpeechRecognition) {
+    if (SpeechRecognition) {
       setTimeout(() => startRecognition(), 300);
     }
   }, 1500);
@@ -1602,10 +1606,7 @@ function init() {
     continueBtn.classList.add('visible');
   }
 
-  // Show fallback buttons if no speech recognition
-  if (!hasSpeechRecognition) {
-    showFallbackMode();
-  }
+  // Fallback buttons stay hidden — speech recognition auto-starts
 
   // ===== EVENT LISTENERS =====
   playBtn.addEventListener('click', () => {
