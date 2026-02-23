@@ -360,7 +360,7 @@ body {
 }
 
 #correct-overlay {
-  background: rgba(46, 213, 115, 0.15);
+  background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, rgba(46,213,115,0.15) 60%, rgba(46,213,115,0.05) 100%);
 }
 
 #retry-overlay {
@@ -737,16 +737,16 @@ const WORD_BANK = {
     emoji: '🐣',
     wordsPerRound: 5,
     words: [
-      { word: 'あ', reading: 'あ' },
-      { word: 'い', reading: 'い' },
-      { word: 'う', reading: 'う' },
-      { word: 'え', reading: 'え' },
-      { word: 'お', reading: 'お' },
-      { word: 'め', reading: 'め' },
-      { word: 'て', reading: 'て' },
-      { word: 'は', reading: 'は' },
-      { word: 'き', reading: 'き' },
-      { word: 'か', reading: 'か' },
+      { word: 'いぬ', reading: 'いぬ' },
+      { word: 'ねこ', reading: 'ねこ' },
+      { word: 'もも', reading: 'もも' },
+      { word: 'あめ', reading: 'あめ' },
+      { word: 'うま', reading: 'うま' },
+      { word: 'はな', reading: 'はな' },
+      { word: 'うみ', reading: 'うみ' },
+      { word: 'そら', reading: 'そら' },
+      { word: 'ほし', reading: 'ほし' },
+      { word: 'くも', reading: 'くも' },
     ]
   },
   2: {
@@ -754,18 +754,18 @@ const WORD_BANK = {
     emoji: '🐰',
     wordsPerRound: 7,
     words: [
-      { word: 'いぬ', reading: 'いぬ' },
-      { word: 'ねこ', reading: 'ねこ' },
-      { word: 'うま', reading: 'うま' },
-      { word: 'あめ', reading: 'あめ' },
-      { word: 'はな', reading: 'はな' },
-      { word: 'もも', reading: 'もも' },
-      { word: 'くも', reading: 'くも' },
       { word: 'かめ', reading: 'かめ' },
-      { word: 'うみ', reading: 'うみ' },
-      { word: 'ほし', reading: 'ほし' },
       { word: 'かぜ', reading: 'かぜ' },
-      { word: 'そら', reading: 'そら' },
+      { word: 'ぶた', reading: 'ぶた' },
+      { word: 'つき', reading: 'つき' },
+      { word: 'やま', reading: 'やま' },
+      { word: 'とり', reading: 'とり' },
+      { word: 'かわ', reading: 'かわ' },
+      { word: 'むし', reading: 'むし' },
+      { word: 'まめ', reading: 'まめ' },
+      { word: 'おに', reading: 'おに' },
+      { word: 'ふね', reading: 'ふね' },
+      { word: 'くつ', reading: 'くつ' },
     ]
   },
   3: {
@@ -804,9 +804,9 @@ const LEVEL_COUNT = Object.keys(WORD_BANK).length;
 
 // ===== PRAISE & RETRY MESSAGES =====
 const PRAISE_MESSAGES = [
-  'すごい！', 'やったね！', 'じょうず！', 'えらい！',
-  'ばっちり！', 'かっこいい！', 'すばらしい！', 'いいね！',
-  'できたね！', 'さいこう！',
+  'すっごーい！！', 'やったー！！', 'てんさい！！', 'えらーい！！',
+  'ばっちり！！', 'かっこいいー！！', 'すばらしい！！', 'かんぺき！！',
+  'できたねー！！', 'さいこう！！', 'すごすぎー！！', 'ぴかいち！！',
 ];
 
 const RETRY_MESSAGES = [
@@ -933,6 +933,83 @@ function playTapSound() {
   playTone(800, 0.05);
 }
 
+// ===== BGM (Procedural cheerful melody) =====
+let bgmPlaying = false;
+let bgmNodes = [];
+
+function startBGM() {
+  if (!audioCtx || bgmPlaying || !gameState.soundEnabled) return;
+  bgmPlaying = true;
+
+  // Cheerful pentatonic melody in C major
+  const bpm = 140;
+  const beatLen = 60 / bpm;
+  const melodyNotes = [
+    // Bar 1-2: upbeat opening
+    523, 587, 659, 784, 659, 587, 523, 0,
+    659, 784, 880, 784, 659, 784, 659, 0,
+    // Bar 3-4: playful bounce
+    784, 880, 784, 659, 523, 659, 784, 0,
+    880, 784, 659, 523, 587, 659, 523, 0,
+  ];
+  const bassNotes = [
+    262, 262, 330, 330, 262, 262, 330, 330,
+    349, 349, 392, 392, 349, 349, 262, 262,
+    262, 262, 330, 330, 349, 349, 392, 392,
+    349, 349, 262, 262, 330, 330, 262, 262,
+  ];
+
+  const loopLen = melodyNotes.length * beatLen * 0.5;
+
+  function scheduleLoop() {
+    if (!bgmPlaying || !audioCtx) return;
+    const now = audioCtx.currentTime;
+
+    melodyNotes.forEach((freq, i) => {
+      if (freq === 0) return;
+      const t = now + i * beatLen * 0.5;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.06, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + beatLen * 0.45);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + beatLen * 0.5);
+      bgmNodes.push(osc);
+    });
+
+    bassNotes.forEach((freq, i) => {
+      const t = now + i * beatLen * 0.5;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.04, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + beatLen * 0.45);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + beatLen * 0.5);
+      bgmNodes.push(osc);
+    });
+
+    // Schedule next loop
+    gameState._bgmTimer = setTimeout(scheduleLoop, (loopLen - 0.1) * 1000);
+  }
+
+  scheduleLoop();
+}
+
+function stopBGM() {
+  bgmPlaying = false;
+  clearTimeout(gameState._bgmTimer);
+  bgmNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  bgmNodes = [];
+}
+
 // ===== SPEECH SYNTHESIS =====
 let cachedVoices = [];
 
@@ -1004,11 +1081,13 @@ function startRecognition() {
     micBtn.classList.add('listening');
     listeningIndicator.classList.add('active');
     micLabel.textContent = 'きいてるよ…';
-    // Safety timeout: if nothing happens in 8s, reset
+    // Safety timeout: if nothing happens in 8s, auto-restart
     gameState._recTimeout = setTimeout(() => {
       if (recognitionActive) {
         stopRecognition();
         micLabel.textContent = 'もういちど おはなし してね！';
+        // Auto-restart after a brief pause
+        setTimeout(() => startRecognition(), 1500);
       }
     }, 8000);
   } catch (e) {
@@ -1077,6 +1156,8 @@ function handleRecognitionEnd() {
   if (recognitionActive && !recognitionGotResult) {
     stopRecognition();
     micLabel.textContent = 'もういちど おはなし してね！';
+    // Auto-restart
+    setTimeout(() => startRecognition(), 1500);
   }
 }
 
@@ -1195,9 +1276,17 @@ function showCurrentWord() {
   wordDisplay.style.animation = 'wordEntrance 0.6s ease-out';
   gameState.attemptsOnCurrentWord = 0;
   gameState.autoPassMode = false;
-  micLabel.textContent = 'おはなし してね！';
   micBtn.disabled = false;
   updateProgress();
+  // Auto-start listening after word entrance animation
+  if (hasSpeechRecognition) {
+    micLabel.textContent = '';
+    setTimeout(() => {
+      startRecognition();
+    }, 800);
+  } else {
+    micLabel.textContent = '';
+  }
 }
 
 function advanceToNextWord() {
@@ -1232,13 +1321,16 @@ function showAutoPassHint() {
   $('retry-sub').textContent = 'いっしょに いってみよう！';
   setTimeout(() => {
     retryOverlay.classList.remove('active');
-  }, 2000);
+    // Auto-restart listening in auto-pass mode
+    if (hasSpeechRecognition) {
+      setTimeout(() => startRecognition(), 500);
+    }
+  }, 2500);
 }
 
 // ===== FEEDBACK =====
 function showCorrectFeedback() {
-  playCorrectSound();
-  spawnStarParticles();
+  stopRecognition();
 
   const isFirstTry = gameState.attemptsOnCurrentWord === 0 && !gameState.autoPassMode;
   const starsEarned = isFirstTry ? 2 : 1;
@@ -1253,7 +1345,22 @@ function showCorrectFeedback() {
 
   correctOverlay.classList.add('active');
 
-  playStarSound();
+  // Big celebration: multi-wave sound + stars + voice praise
+  playCorrectSound();
+  spawnStarParticles();
+  setTimeout(() => {
+    playStarSound();
+    spawnStarParticles();
+  }, 300);
+  setTimeout(() => {
+    playStarSound();
+    spawnStarParticles();
+  }, 600);
+
+  // Speak the praise out loud!
+  setTimeout(() => {
+    speakWord(praise.replace(/！/g, ''));
+  }, 400);
 }
 
 function showRetryFeedback() {
@@ -1266,6 +1373,10 @@ function showRetryFeedback() {
   retryOverlay.classList.add('active');
   setTimeout(() => {
     retryOverlay.classList.remove('active');
+    // Auto-restart listening after retry
+    if (hasSpeechRecognition) {
+      setTimeout(() => startRecognition(), 300);
+    }
   }, 1500);
 }
 
@@ -1299,14 +1410,16 @@ function hideOverlays() {
 
 // ===== STAR PARTICLES =====
 function spawnStarParticles() {
-  for (let i = 0; i < 8; i++) {
+  const chars = ['★', '✦', '✨', '⭐'];
+  const colors = ['#FFD700', '#FF6B6B', '#FF9FF3', '#FECA57', '#48DBFB'];
+  for (let i = 0; i < 12; i++) {
     const star = document.createElement('div');
     star.className = 'star-particle';
-    star.textContent = '★';
-    star.style.left = (Math.random() * 80 + 10) + '%';
-    star.style.top = (Math.random() * 30 + 40) + '%';
-    star.style.color = Math.random() > 0.5 ? '#FFD700' : '#FF6B6B';
-    star.style.fontSize = (Math.random() * 20 + 20) + 'px';
+    star.textContent = chars[Math.floor(Math.random() * chars.length)];
+    star.style.left = (Math.random() * 90 + 5) + '%';
+    star.style.top = (Math.random() * 40 + 30) + '%';
+    star.style.color = colors[Math.floor(Math.random() * colors.length)];
+    star.style.fontSize = (Math.random() * 25 + 22) + 'px';
     document.body.appendChild(star);
     star.addEventListener('animationend', () => star.remove());
   }
@@ -1409,11 +1522,13 @@ function init() {
     playTapSound();
     resetProgress();
     startLevel(1);
+    startBGM();
   });
 
   continueBtn.addEventListener('click', () => {
     initAudio();
     playTapSound();
+    startBGM();
     const saved = loadProgress();
     if (saved) {
       gameState.totalStars = saved.totalStars || 0;
@@ -1461,6 +1576,7 @@ function init() {
 
   restartBtn.addEventListener('click', () => {
     playTapSound();
+    stopBGM();
     resetProgress();
     showScreen(splashScreen);
     continueBtn.classList.remove('visible');
@@ -1469,12 +1585,18 @@ function init() {
   soundToggle.addEventListener('click', () => {
     gameState.soundEnabled = !gameState.soundEnabled;
     soundToggle.textContent = gameState.soundEnabled ? '♪' : '🔇';
-    if (gameState.soundEnabled) playTapSound();
+    if (gameState.soundEnabled) {
+      playTapSound();
+      startBGM();
+    } else {
+      stopBGM();
+    }
   });
 
   homeBtn.addEventListener('click', () => {
     playTapSound();
     stopRecognition();
+    stopBGM();
     hideOverlays();
     showScreen(splashScreen);
     const saved = loadProgress();
