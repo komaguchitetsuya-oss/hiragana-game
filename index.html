@@ -933,6 +933,69 @@ function playTapSound() {
   playTone(800, 0.05);
 }
 
+function playCelebrationSFX() {
+  if (!audioCtx || !gameState.soundEnabled) return;
+  // Cheering whoops: ascending frequency sweeps
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      const t = audioCtx.currentTime;
+      osc.frequency.setValueAtTime(500 + i * 200, t);
+      osc.frequency.exponentialRampToValueAtTime(1400 + i * 300, t + 0.18);
+      gain.gain.setValueAtTime(0.13, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.3);
+    }, i * 160);
+  }
+  // Clapping: short filtered noise bursts
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => {
+      if (!audioCtx) return;
+      const bufSize = Math.floor(audioCtx.sampleRate * 0.035);
+      const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let j = 0; j < bufSize; j++) {
+        data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufSize * 0.25));
+      }
+      const src = audioCtx.createBufferSource();
+      src.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 3000;
+      filter.Q.value = 0.7;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      src.start();
+    }, 500 + i * 110);
+  }
+  // Whistle: descending then ascending tone
+  setTimeout(() => {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    const t = audioCtx.currentTime;
+    osc.frequency.setValueAtTime(1800, t);
+    osc.frequency.exponentialRampToValueAtTime(1200, t + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(2000, t + 0.3);
+    gain.gain.setValueAtTime(0.08, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.35);
+  }, 1200);
+}
+
 // ===== BGM (Procedural cheerful melody) =====
 let bgmPlaying = false;
 let bgmNodes = [];
@@ -1209,27 +1272,57 @@ function levenshteinDistance(a, b) {
 }
 
 function checkMatch(target, alternatives) {
-  const maxDist = target.length <= 1 ? 0 : target.length <= 2 ? 1 : 2;
+  // Very lenient matching: "それっぽかったらOK"
   const variants = generateChildVariants(target);
+  // Generous distance: at least 1, up to half the target length
+  const maxDist = Math.max(Math.ceil(target.length * 0.6), 1);
 
   for (const alt of alternatives) {
     const normalized = normalizeToHiragana(alt);
+    const clean = normalized.replace(/[\s、。！？・\-]/g, '');
 
     // Tier 1: Exact match
-    if (normalized === target) return { match: true, tier: 1 };
+    if (clean === target) return { match: true, tier: 1 };
 
     // Tier 2: Child variant match
-    if (variants.includes(normalized)) return { match: true, tier: 2 };
+    if (variants.includes(clean)) return { match: true, tier: 2 };
 
-    // Tier 3: Levenshtein on target
-    if (levenshteinDistance(normalized, target) <= maxDist) return { match: true, tier: 3 };
+    // Tier 3: Generous Levenshtein on target
+    if (levenshteinDistance(clean, target) <= maxDist) return { match: true, tier: 3 };
 
-    // Tier 3b: Levenshtein on child variants
+    // Tier 4: Generous Levenshtein on child variants
     for (const v of variants) {
-      if (levenshteinDistance(normalized, v) <= Math.max(maxDist - 1, 0)) {
+      if (levenshteinDistance(clean, v) <= maxDist) {
         return { match: true, tier: 3 };
       }
     }
+
+    // Tier 5: Substring — target in recognized text or vice versa
+    if (clean.length >= 1 && (clean.includes(target) || target.includes(clean))) {
+      return { match: true, tier: 3 };
+    }
+    for (const v of variants) {
+      if (clean.includes(v) || v.includes(clean)) return { match: true, tier: 3 };
+    }
+
+    // Tier 6: First character match (for 2-char words)
+    if (target.length <= 2 && clean.length >= 1) {
+      const firstCharVariants = [target[0], ...(CHILD_SUBSTITUTIONS[target[0]] || [])];
+      if (firstCharVariants.some(fc => clean[0] === fc || clean.includes(fc))) {
+        return { match: true, tier: 3 };
+      }
+    }
+
+    // Tier 7: Shared characters (order-independent) — at least half match
+    const targetChars = [...target];
+    const cleanChars = [...clean];
+    let shared = 0;
+    const used = new Set();
+    for (const c of cleanChars) {
+      const idx = targetChars.findIndex((tc, i) => tc === c && !used.has(i));
+      if (idx >= 0) { shared++; used.add(idx); }
+    }
+    if (shared >= Math.ceil(target.length / 2)) return { match: true, tier: 3 };
   }
   return { match: false, tier: 0 };
 }
@@ -1357,10 +1450,8 @@ function showCorrectFeedback() {
     spawnStarParticles();
   }, 600);
 
-  // Speak the praise out loud!
-  setTimeout(() => {
-    speakWord(praise.replace(/！/g, ''));
-  }, 400);
+  // Celebration sound effects (cheering + clapping, no TTS)
+  setTimeout(() => playCelebrationSFX(), 400);
 }
 
 function showRetryFeedback() {
